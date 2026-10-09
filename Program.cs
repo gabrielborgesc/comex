@@ -13,6 +13,7 @@ internal class Program
         {
             Console.WriteLine("\n=== COMEX ===");
             Console.WriteLine("1 - Cadastrar cliente");
+            Console.WriteLine("2 - Listar clientes");
             Console.WriteLine("-1 - Sair");
             Console.Write("Escolha uma opção: ");
 
@@ -40,6 +41,24 @@ internal class Program
             {
                 CadastraCliente(clientes);
             }
+            else if (opcao == 2)
+            {
+                ListaClientes(clientes);
+            }
+        }
+    }
+
+    private static void ListaClientes(Dictionary<string, string> clientes)
+    {
+        if (clientes.Count == 0)
+        {
+            Console.WriteLine("Nenhum cliente cadastrado.");
+            return;
+        }
+
+        foreach (KeyValuePair<string, string> cliente in clientes)
+        {
+            Console.WriteLine($"CPF: {cliente.Key} | Nome: {cliente.Value}");
         }
     }
 
