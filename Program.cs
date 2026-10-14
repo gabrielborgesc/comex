@@ -20,11 +20,12 @@ internal class Program
         [Description("Listar produtos")]
         ListarProdutos = 4,
 
+        [Description("Adicionar produto no carrinho")]
+        AdicionarProdutoNoCarrinho = 6,
+        
         [Description("Ajustar preço de produto")]
         AjustarPrecoDeProduto = 5,
 
-        [Description("Adicionar produto no carrinho")]
-        AdicionarProdutoNoCarrinho = 6,
 
         [Description("Listar carrinho")]
         ListarCarrinho = 7,
@@ -33,20 +34,30 @@ internal class Program
         FecharCompra = 8
     }
 
-    private sealed record Cliente(int Id, string Cpf, string Nome);
-
-    private sealed record Produto(int Id, string Nome, decimal Preco);
-
-    private static void Main()
+    private static void Main(string[] args)
     {
+        if (args.Length > 0 && string.Equals(args[0], "--teste-cliente", StringComparison.OrdinalIgnoreCase))
+        {
+            TesteCliente.Executar();
+            return;
+        }
+
+        if (args.Length > 0 && string.Equals(args[0], "--teste-produto", StringComparison.OrdinalIgnoreCase))
+        {
+            TesteProduto.Executar();
+            return;
+        }
+
         ExibirMenuDeOpcoes();
     }
 
     private static void ExibirMenuDeOpcoes()
     {
-        Dictionary<int, Cliente> clientes = new();
-        Dictionary<int, Produto> produtos = new();
-        Dictionary<int, List<int>> carrinhos = new();
+        PersistenciaJson persistencia = new();
+        Dictionary<int, Produto> produtos = persistencia.CarregarProdutos().ToDictionary(produto => produto.Id);
+        Dictionary<int, Endereco> enderecos = persistencia.CarregarEnderecos().ToDictionary(endereco => endereco.Id);
+        Dictionary<int, Cliente> clientes = persistencia.CarregarClientes(enderecos);
+        Dictionary<int, Carrinho> carrinhos = persistencia.CarregarCarrinhos().ToDictionary(carrinho => carrinho.ClienteId);
 
         while (true)
         {
@@ -88,22 +99,22 @@ internal class Program
                     Console.WriteLine("COMEX FINALIZADO!");
                     return;
                 case OpcaoMenu.CadastrarCliente:
-                    CadastraCliente(clientes);
+                    CadastraCliente(clientes, enderecos, persistencia);
                     break;
                 case OpcaoMenu.ListarClientes:
                     ListaClientes(clientes);
                     break;
                 case OpcaoMenu.CadastrarProduto:
-                    CadastraProduto(produtos);
+                    CadastraProduto(produtos, persistencia);
                     break;
                 case OpcaoMenu.AjustarPrecoDeProduto:
-                    AjustarPrecoDeProduto(produtos);
+                    AjustarPrecoDeProduto(produtos, persistencia);
                     break;
                 case OpcaoMenu.ListarProdutos:
                     ListaProdutos(produtos);
                     break;
                 case OpcaoMenu.AdicionarProdutoNoCarrinho:
-                    AdicionaProdutoNoCarrinho(clientes, produtos, carrinhos);
+                    AdicionaProdutoNoCarrinho(clientes, produtos, carrinhos, persistencia);
                     break;
                 case OpcaoMenu.ListarCarrinho:
                     ListaCarrinho(clientes, produtos, carrinhos);
@@ -129,7 +140,8 @@ internal class Program
     private static void AdicionaProdutoNoCarrinho(
         Dictionary<int, Cliente> clientes,
         Dictionary<int, Produto> produtos,
-        Dictionary<int, List<int>> carrinhos)
+        Dictionary<int, Carrinho> carrinhos,
+        PersistenciaJson persistencia)
     {
         Cliente? cliente = SelecionaCliente(clientes);
         if (cliente is null)
@@ -158,13 +170,14 @@ internal class Program
             return;
         }
 
-        if (!carrinhos.TryGetValue(cliente.Id, out List<int>? carrinho))
+        if (!carrinhos.TryGetValue(cliente.Id, out Carrinho? carrinho))
         {
-            carrinho = new List<int>();
+            carrinho = new Carrinho { ClienteId = cliente.Id };
             carrinhos[cliente.Id] = carrinho;
         }
 
-        carrinho.Add(produto.Id);
+        carrinho.ProdutoIds.Add(produto.Id);
+        persistencia.SalvarCarrinhos(carrinhos.Values);
         Console.WriteLine($"Produto {produto.Nome} adicionado ao carrinho de {cliente.Nome} com sucesso.");
     }
 
@@ -208,7 +221,7 @@ internal class Program
     private static void ListaCarrinho(
         Dictionary<int, Cliente> clientes,
         Dictionary<int, Produto> produtos,
-        Dictionary<int, List<int>> carrinhos)
+        Dictionary<int, Carrinho> carrinhos)
     {
         Cliente? cliente = SelecionaCliente(clientes);
         if (cliente is null)
@@ -222,20 +235,20 @@ internal class Program
     private static decimal? ExibeCarrinho(
         Cliente cliente,
         Dictionary<int, Produto> produtos,
-        Dictionary<int, List<int>> carrinhos)
+        Dictionary<int, Carrinho> carrinhos)
     {
-        if (!carrinhos.TryGetValue(cliente.Id, out List<int>? carrinho) || carrinho.Count == 0)
+        if (!carrinhos.TryGetValue(cliente.Id, out Carrinho? carrinho) || carrinho.ProdutoIds.Count == 0)
         {
             Console.WriteLine($"O carrinho de {cliente.Nome} está vazio.");
             return null;
         }
 
         decimal total = 0;
-        foreach (int idProduto in carrinho)
+        foreach (int idProduto in carrinho.ProdutoIds)
         {
             Produto produto = produtos[idProduto];
-            Console.WriteLine($"ID: {produto.Id} | Produto: {produto.Nome} | Preço: {produto.Preco}");
-            total += produto.Preco;
+            Console.WriteLine($"ID: {produto.Id} | Produto: {produto.Nome} | Preço unitário: R$ {produto.PrecoUnitario:F2}");
+            total += produto.PrecoUnitario;
         }
 
         Console.WriteLine($"Total: R$ {total:F2}");
@@ -245,7 +258,7 @@ internal class Program
     private static void FechaCompra(
         Dictionary<int, Cliente> clientes,
         Dictionary<int, Produto> produtos,
-        Dictionary<int, List<int>> carrinhos)
+        Dictionary<int, Carrinho> carrinhos)
     {
         Cliente? cliente = SelecionaCliente(
             clientes,
@@ -273,7 +286,7 @@ internal class Program
         Console.WriteLine($"Realizando pagamento de R$ {valorFinal.Value:F2} no cartão {numeroCartao}.");
     }
 
-    private static void AjustarPrecoDeProduto(Dictionary<int, Produto> produtos)
+    private static void AjustarPrecoDeProduto(Dictionary<int, Produto> produtos, PersistenciaJson persistencia)
     {
         if (produtos.Count == 0)
         {
@@ -303,41 +316,75 @@ internal class Program
             return;
         }
 
-        if (!decimal.TryParse(precoInformado, out decimal novoPreco))
+        if (!ConversorPreco.TryParse(precoInformado, out decimal novoPreco))
         {
             Console.WriteLine("Preço inválido.");
             return;
         }
 
-        produtos[idProduto] = produto with { Preco = novoPreco };
+        produto.PrecoUnitario = novoPreco;
+        persistencia.SalvarProdutos(produtos.Values);
         Console.WriteLine($"Preço do produto {produto.Nome} ajustado com sucesso.");
     }
 
-    private static void CadastraProduto(Dictionary<int, Produto> produtos)
+    private static void CadastraProduto(Dictionary<int, Produto> produtos, PersistenciaJson persistencia)
     {
-        Console.Write("Digite o nome do produto: ");
-        string? nome = Console.ReadLine();
-        if (nome is null)
+        string? nome;
+        do
+        {
+            Console.Write("Digite o nome do produto: ");
+            nome = Console.ReadLine();
+            if (nome is null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(nome))
+            {
+                Console.WriteLine("O nome do produto é obrigatório.");
+            }
+        }
+        while (string.IsNullOrWhiteSpace(nome));
+
+        Console.Write("Digite a descrição do produto: ");
+        string? descricao = Console.ReadLine();
+        if (descricao is null)
         {
             return;
         }
 
-        Console.Write("Digite o preço do produto: ");
+        Console.Write("Digite o preço unitário do produto: ");
         string? precoInformado = Console.ReadLine();
         if (precoInformado is null)
         {
             return;
         }
 
-        if (!decimal.TryParse(precoInformado, out decimal preco))
+        if (!ConversorPreco.TryParse(precoInformado, out decimal precoUnitario))
         {
             Console.WriteLine("Preço inválido.");
             return;
         }
 
-        int id = produtos.Count + 1;
-        produtos[id] = new Produto(id, nome, preco);
-        Console.WriteLine($"Produto {nome} cadastrado com sucesso. ID: {id}.");
+        Console.Write("Digite a quantidade do produto: ");
+        string? quantidadeInformada = Console.ReadLine();
+        if (quantidadeInformada is null)
+        {
+            return;
+        }
+
+        if (!int.TryParse(quantidadeInformada, out int quantidade))
+        {
+            Console.WriteLine("Quantidade inválida.");
+            return;
+        }
+
+        int id = produtos.Keys.DefaultIfEmpty().Max() + 1;
+        Produto produto = new(id, nome, descricao, precoUnitario, quantidade);
+        produtos[id] = produto;
+        persistencia.SalvarProdutos(produtos.Values);
+        Console.WriteLine($"Produto {produto.Nome} cadastrado com sucesso.");
+        Console.WriteLine($"ID: {produto.Id} | Nome: {produto.Nome} | Descrição: {produto.Descricao} | Preço unitário: R$ {produto.PrecoUnitario:F2} | Quantidade: {produto.Quantidade}");
     }
 
     private static void ListaProdutos(Dictionary<int, Produto> produtos)
@@ -350,7 +397,7 @@ internal class Program
 
         foreach (Produto produto in produtos.Values)
         {
-            Console.WriteLine($"ID: {produto.Id} | Produto: {produto.Nome} | Preço: {produto.Preco}");
+            Console.WriteLine($"ID: {produto.Id} | Nome: {produto.Nome} | Descrição: {produto.Descricao} | Preço unitário: R$ {produto.PrecoUnitario:F2} | Quantidade: {produto.Quantidade}");
         }
     }
 
@@ -364,11 +411,15 @@ internal class Program
 
         foreach (Cliente cliente in clientes.Values)
         {
-            Console.WriteLine($"ID: {cliente.Id} | CPF: {cliente.Cpf} | Nome: {cliente.Nome}");
+            Console.WriteLine($"ID: {cliente.Id} | CPF: {cliente.Cpf} | Nome: {cliente.Nome} | E-mail: {cliente.Email} | Profissão: {cliente.Profissao} | Telefone: {cliente.Telefone}");
+            Console.WriteLine($"Endereço: Rua: {cliente.Endereco.Rua}, {cliente.Endereco.Numero} | {cliente.Endereco.Complemento} | {cliente.Endereco.Bairro} | {cliente.Endereco.Cidade} - {cliente.Endereco.Estado}");
         }
     }
 
-    private static void CadastraCliente(Dictionary<int, Cliente> clientes)
+    private static void CadastraCliente(
+        Dictionary<int, Cliente> clientes,
+        Dictionary<int, Endereco> enderecos,
+        PersistenciaJson persistencia)
     {
         Console.Write("Digite o CPF do cliente: ");
         string? cpf = Console.ReadLine();
@@ -397,8 +448,83 @@ internal class Program
             return;
         }
 
-        int id = clientes.Count + 1;
-        clientes[id] = new Cliente(id, cpf, nome);
+        Console.Write("Digite o e-mail do cliente: ");
+        string? email = Console.ReadLine();
+        if (email is null)
+        {
+            return;
+        }
+
+        Console.Write("Digite a profissão do cliente: ");
+        string? profissao = Console.ReadLine();
+        if (profissao is null)
+        {
+            return;
+        }
+
+        Console.Write("Digite o telefone do cliente: ");
+        string? telefone = Console.ReadLine();
+        if (telefone is null)
+        {
+            return;
+        }
+
+        Console.Write("Digite a rua do cliente: ");
+        string? rua = Console.ReadLine();
+        if (rua is null)
+        {
+            return;
+        }
+
+        Console.Write("Digite o número do endereço: ");
+        string? numeroInformado = Console.ReadLine();
+        if (numeroInformado is null)
+        {
+            return;
+        }
+
+        if (!int.TryParse(numeroInformado, out int numero))
+        {
+            Console.WriteLine("Número do endereço inválido.");
+            return;
+        }
+
+        Console.Write("Digite o complemento do endereço: ");
+        string? complemento = Console.ReadLine();
+        if (complemento is null)
+        {
+            return;
+        }
+
+        Console.Write("Digite o bairro do cliente: ");
+        string? bairro = Console.ReadLine();
+        if (bairro is null)
+        {
+            return;
+        }
+
+        Console.Write("Digite a cidade do cliente: ");
+        string? cidade = Console.ReadLine();
+        if (cidade is null)
+        {
+            return;
+        }
+
+        Console.Write("Digite o estado do cliente: ");
+        string? estado = Console.ReadLine();
+        if (estado is null)
+        {
+            return;
+        }
+
+        int id = clientes.Keys.DefaultIfEmpty().Max() + 1;
+        int idEndereco = enderecos.Keys.DefaultIfEmpty().Max() + 1;
+        Endereco endereco = new(idEndereco, bairro, cidade, complemento, estado, rua, numero);
+        Cliente cliente = new(id, nome, cpf, email, profissao, telefone, endereco);
+        clientes[id] = cliente;
+        enderecos[idEndereco] = endereco;
+        persistencia.SalvarEnderecos(enderecos.Values);
+        persistencia.SalvarClientes(clientes.Values);
         Console.WriteLine($"Usuário {nome} ({cpf}) cadastrado com sucesso. ID: {id}.");
     }
 }
