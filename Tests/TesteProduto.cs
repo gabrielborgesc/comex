@@ -1,3 +1,9 @@
+using Comex.Models;
+using Comex.Persistence;
+using Comex.Utilities;
+
+namespace Comex.Tests;
+
 internal static class TesteProduto
 {
     public static void Executar()

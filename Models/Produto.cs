@@ -1,3 +1,5 @@
+namespace Comex.Models;
+
 public class Produto
 {
     public Produto(int id, string nome, string descricao, decimal precoUnitario, int quantidade)

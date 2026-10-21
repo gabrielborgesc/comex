@@ -1,3 +1,7 @@
+using Comex.Models;
+
+namespace Comex.Tests;
+
 internal static class TesteCliente
 {
     public static void Executar()

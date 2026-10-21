@@ -1,3 +1,5 @@
+namespace Comex.Models;
+
 public class Cliente
 {
     public Cliente(int id, string nome, string cpf, string email, string profissao, string telefone, Endereco endereco)

@@ -1,5 +1,7 @@
 using System.Globalization;
 
+namespace Comex.Utilities;
+
 internal static class ConversorPreco
 {
     public static bool TryParse(string? entrada, out decimal preco)

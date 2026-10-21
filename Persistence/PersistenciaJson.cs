@@ -1,4 +1,7 @@
 using System.Text.Json;
+using Comex.Models;
+
+namespace Comex.Persistence;
 
 internal sealed class PersistenciaJson
 {

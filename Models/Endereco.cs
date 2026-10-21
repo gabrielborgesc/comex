@@ -1,3 +1,5 @@
+namespace Comex.Models;
+
 public class Endereco
 {
     public Endereco(int id, string bairro, string cidade, string complemento, string estado, string rua, int numero)

@@ -1,5 +1,11 @@
 using System.ComponentModel;
 using System.Reflection;
+using Comex.Models;
+using Comex.Persistence;
+using Comex.Tests;
+using Comex.Utilities;
+
+namespace Comex;
 
 internal class Program
 {
