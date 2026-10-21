@@ -83,7 +83,36 @@ internal sealed class MenuProdutos
             return;
         }
 
-        foreach (Produto produto in _produtos.Values)
+        ExibirProdutos(_produtos.Values);
+    }
+
+    public void ListarPorNome()
+    {
+        if (_produtos.Count == 0)
+        {
+            Listar();
+            return;
+        }
+
+        ExibirProdutos(_produtos.Values.OrderBy(produto => produto.Nome));
+    }
+
+    public void ListarPorPreco()
+    {
+        if (_produtos.Count == 0)
+        {
+            Listar();
+            return;
+        }
+
+        ExibirProdutos(_produtos.Values
+            .OrderBy(produto => produto.PrecoUnitario)
+            .ThenBy(produto => produto.Nome));
+    }
+
+    private static void ExibirProdutos(IEnumerable<Produto> produtos)
+    {
+        foreach (Produto produto in produtos)
         {
             ExibirProduto(produto);
         }

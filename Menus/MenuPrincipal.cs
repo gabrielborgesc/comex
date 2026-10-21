@@ -34,7 +34,13 @@ internal sealed class MenuPrincipal
         ListarCarrinho = 7,
 
         [Description("Fechar compra")]
-        FecharCompra = 8
+        FecharCompra = 8,
+
+        [Description("Listar produtos por nome (A-Z)")]
+        ListarProdutosPorNome = 9,
+
+        [Description("Listar produtos por preço (menor para maior)")]
+        ListarProdutosPorPreco = 10
     }
 
     private readonly MenuClientes _menuClientes;
@@ -93,6 +99,12 @@ internal sealed class MenuPrincipal
                     break;
                 case OpcaoMenu.ListarProdutos:
                     _menuProdutos.Listar();
+                    break;
+                case OpcaoMenu.ListarProdutosPorNome:
+                    _menuProdutos.ListarPorNome();
+                    break;
+                case OpcaoMenu.ListarProdutosPorPreco:
+                    _menuProdutos.ListarPorPreco();
                     break;
                 case OpcaoMenu.AdicionarProdutoNoCarrinho:
                     _menuCarrinho.AdicionarProduto();
