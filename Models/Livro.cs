@@ -1,6 +1,6 @@
 namespace Comex.Models;
 
-public class Livro : Produto
+public class Livro : Produto, IIdentificavel
 {
     public Livro(
         int id,
@@ -19,4 +19,6 @@ public class Livro : Produto
     public string Isbn { get; set; }
 
     public int TotalPaginas { get; set; }
+
+    public string Identificar() => $"Nome: {Nome} | ISBN: {Isbn}";
 }

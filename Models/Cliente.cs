@@ -1,6 +1,6 @@
 namespace Comex.Models;
 
-public class Cliente
+public class Cliente : IIdentificavel
 {
     public Cliente(int id, string nome, string cpf, string email, string profissao, string telefone, Endereco endereco)
     {
@@ -26,4 +26,6 @@ public class Cliente
     public string Telefone { get; set; }
 
     public Endereco Endereco { get; set; }
+
+    public string Identificar() => $"Nome: {Nome} | CPF: {Cpf}";
 }
