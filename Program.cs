@@ -4,8 +4,8 @@ namespace Comex;
 
 internal class Program
 {
-    private static void Main()
+    private static async Task Main()
     {
-        new MenuPrincipal().Executar();
+        await new MenuPrincipal().ExecutarAsync();
     }
 }

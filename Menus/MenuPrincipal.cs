@@ -40,12 +40,16 @@ internal sealed class MenuPrincipal
         ListarProdutosPorNome = 9,
 
         [Description("Listar produtos por preço (menor para maior)")]
-        ListarProdutosPorPreco = 10
+        ListarProdutosPorPreco = 10,
+
+        [Description("Buscar produtos em API externa")]
+        BuscarProdutosExternos = 11
     }
 
     private readonly MenuClientes _menuClientes;
     private readonly MenuProdutos _menuProdutos;
     private readonly MenuCarrinho _menuCarrinho;
+    private readonly MenuConsultaExterna _menuConsultaExterna = new();
 
     public MenuPrincipal()
     {
@@ -60,7 +64,7 @@ internal sealed class MenuPrincipal
         _menuCarrinho = new MenuCarrinho(produtos, carrinhos, persistencia, _menuClientes, _menuProdutos);
     }
 
-    public void Executar()
+    public async Task ExecutarAsync()
     {
         while (true)
         {
@@ -114,6 +118,9 @@ internal sealed class MenuPrincipal
                     break;
                 case OpcaoMenu.FecharCompra:
                     _menuCarrinho.FecharCompra();
+                    break;
+                case OpcaoMenu.BuscarProdutosExternos:
+                    await _menuConsultaExterna.BuscarProdutosAsync();
                     break;
                 default:
                     Console.WriteLine("Opção inválida.");
