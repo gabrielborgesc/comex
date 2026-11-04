@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -19,9 +18,13 @@ internal sealed class MenuConsultaExterna
             using HttpResponseMessage resposta = await ClienteHttp.GetAsync(UriProdutos);
             resposta.EnsureSuccessStatusCode();
 
-            await using Stream conteudo = await resposta.Content.ReadAsStreamAsync();
-            List<ProdutoExterno>? produtos = await JsonSerializer.DeserializeAsync<List<ProdutoExterno>>(
-                conteudo,
+            string jsonBruto = await resposta.Content.ReadAsStringAsync();
+            const string nomeArquivo = "produtos.json";
+            File.WriteAllText(nomeArquivo, jsonBruto);
+            Console.WriteLine($"JSON bruto salvo em: {Path.GetFullPath(nomeArquivo)}");
+
+            List<ProdutoExterno>? produtos = JsonSerializer.Deserialize<List<ProdutoExterno>>(
+                jsonBruto,
                 OpcoesJson);
 
             if (produtos is null || produtos.Count == 0)
@@ -45,6 +48,14 @@ internal sealed class MenuConsultaExterna
         catch (TaskCanceledException)
         {
             Console.WriteLine("A consulta à API excedeu o tempo limite.");
+        }
+        catch (IOException excecao)
+        {
+            Console.WriteLine($"Não foi possível salvar produtos.json: {excecao.Message}");
+        }
+        catch (UnauthorizedAccessException excecao)
+        {
+            Console.WriteLine($"Sem permissão para salvar produtos.json: {excecao.Message}");
         }
         catch (JsonException excecao)
         {

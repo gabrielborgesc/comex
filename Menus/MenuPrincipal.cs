@@ -43,16 +43,21 @@ internal sealed class MenuPrincipal
         ListarProdutosPorPreco = 10,
 
         [Description("Buscar produtos em API externa")]
-        BuscarProdutosExternos = 11
+        BuscarProdutosExternos = 11,
+
+        [Description("Gerar relatório CSV dos produtos")]
+        GerarRelatorioCsv = 12
     }
 
     private readonly MenuClientes _menuClientes;
     private readonly MenuProdutos _menuProdutos;
     private readonly MenuCarrinho _menuCarrinho;
     private readonly MenuConsultaExterna _menuConsultaExterna = new();
+    private readonly IReadOnlyDictionary<int, Menu> _menus;
 
-    public MenuPrincipal()
+    public MenuPrincipal(IReadOnlyDictionary<int, Menu> menus)
     {
+        _menus = menus;
         PersistenciaJson persistencia = new();
         Dictionary<int, Produto> produtos = persistencia.CarregarProdutos().ToDictionary(produto => produto.Id);
         Dictionary<int, Endereco> enderecos = persistencia.CarregarEnderecos().ToDictionary(endereco => endereco.Id);
@@ -121,6 +126,16 @@ internal sealed class MenuPrincipal
                     break;
                 case OpcaoMenu.BuscarProdutosExternos:
                     await _menuConsultaExterna.BuscarProdutosAsync();
+                    break;
+                case OpcaoMenu.GerarRelatorioCsv:
+                    if (_menus.TryGetValue(opcaoInformada, out Menu? menu))
+                    {
+                        menu.Executar();
+                    }
+                    else
+                    {
+                        Console.WriteLine("Menu de relatório não está configurado.");
+                    }
                     break;
                 default:
                     Console.WriteLine("Opção inválida.");

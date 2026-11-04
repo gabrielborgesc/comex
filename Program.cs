@@ -6,6 +6,11 @@ internal class Program
 {
     private static async Task Main()
     {
-        await new MenuPrincipal().ExecutarAsync();
+        Dictionary<int, Menu> menus = new()
+        {
+            [12] = new MenuGerarRelatorioCsv()
+        };
+
+        await new MenuPrincipal(menus).ExecutarAsync();
     }
 }

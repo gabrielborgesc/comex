@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageId>Comex.GeneradorRelatorio</PackageId>
+    <Title>Comex Gerador de Relatório</Title>
+    <Version>1.0.0</Version>
+    <Description>Biblioteca para exportar produtos em arquivos CSV.</Description>
+    <Authors>Comex</Authors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageOutputPath>$(MSBuildProjectDirectory)\..\LocalNuGetFeed</PackageOutputPath>
+  </PropertyGroup>
+</Project>
